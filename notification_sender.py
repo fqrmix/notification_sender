@@ -14,6 +14,7 @@ import re
 import time
 import logging
 import uuid
+from typing import Any
 from sys import argv, stdout
 from urllib.parse import urlparse
 from dataclasses import dataclass
@@ -34,16 +35,28 @@ sended_objects = list()
 usage_text = 'Usage:\n\npython ./notification_sender.py \
 [PATH_TO_JSON.json] [merchant_url]'
 
+class KibanaObject(dict):
+    # @Override from dict()
+    def __init__(self, *args, **kwargs):
+      super(KibanaObject, self).__init__(*args, **kwargs)
+
+    # @Override from dict()
+    def __getitem__(self, __key: Any) -> Any:
+        try:
+            return super().__getitem__(__key)
+        except KeyError:
+            pass
+
 @dataclass
 class k8s_Message:
-    traceid: str
-    level: str
-    paymentid: str
-    name: str
-    methodid: str
-    shopid: str
-    thread: str
-    message: str
+    traceid: str = ...
+    level: str = ...
+    paymentid: str = ...
+    name: str = ...
+    methodid: str = ...
+    shopid: str = ...
+    thread: str = ...
+    message: str = ...
 
 @dataclass
 class Notification:
@@ -80,7 +93,8 @@ try:
         raw_data = json.load(json_file)
 
     for hit in raw_data['hits']['hits']:
-        message_dict = hit['_source']['message']
+        message_dict = KibanaObject()
+        message_dict.update(hit['_source']['message'])
         message_object = k8s_Message(
             traceid = message_dict['traceid'],
             level = message_dict['level'],
